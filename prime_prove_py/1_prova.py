@@ -23,4 +23,4 @@ for item in my_list:
 sec_list = ['marta', 1, 3]
 print('sec_list è {}'.format(sec_list))
 
-my_dict
+
