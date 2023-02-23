@@ -24,7 +24,7 @@ class CSVTimeSeriesFile(CSVFile):
             can_read = False
             
         if not can_read:
-            raise ExamException('errore in apertura del file')
+            raise ExamException('Errore in apertura del file')
     
         for line in my_file:
             try:
@@ -64,6 +64,10 @@ def value_list(series, year):
             continue
     
     list = [item[1] for item in series if year in item[0]]
+
+    if list == []:
+        
+        return None
     
     return list
     
@@ -75,13 +79,19 @@ def detect_similar_monthly_variation(time_series, years):
     print('{} = {}'.format(years[0],list_years_1))
 
     list_years_2 = value_list(time_series, years[-1])
+
+    if list_years_1 == None or list_years_2 == None:
+        
+        raise ExamException('Anno inserito non valido!')
     
 
     print('{} = "{}"'.format(years[1],list_years_2))
 
     try:
         new_1 = [abs(list_years_1[i] - list_years_1[i+1]) for i in range(len(list_years_1)-1)]
+    
     except Exception as e:
+        
         print('ho quest errore "{}"'.format(e))
 
     print('new_1 è : {}'.format(new_1))
