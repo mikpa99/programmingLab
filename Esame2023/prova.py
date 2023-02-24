@@ -15,8 +15,6 @@ class CSVTimeSeriesFile(CSVFile):
         
         my_time_series = []
         can_read = True
-        ordered_and_not_dulicated = True
-        same = True
         
         try:
             my_file = open(self.name, 'r')
@@ -27,47 +25,56 @@ class CSVTimeSeriesFile(CSVFile):
             
         if not can_read:
             raise ExamException('Errore in apertura del file')
+    
+        for line in my_file:
+           
+            element = line.split(',')
+            if len(element) < 2:
+                    continue
+                
+            
+            if element[0] != 'date' and '19' in element[0]:
+               
+                element[-1] = element[-1].strip()
+                
+                try:
+                    
+                    element[-1] = int(element[-1])
+                
+                except Exception as e:
+                    
+                    element[-1] = None
 
-        my_time_series = [line for line in my_file if not 'date' in line] 
-
-
+                my_time_series.append(element)
+        
         my_list_b = my_time_series[:]
+        print(my_list_b)
+        
+       
+        same = True
+        ordered_and_not_dulicated_list = True
+        
         my_list_b.sort()
         
         for i in range(len(my_time_series)):
             if my_time_series[i] != my_list_b[i]:
                 same = False
+        print (same)
         
-        if not same  or len(my_time_series) != len(set(my_list_b)):
-            ordered_and_not_dulicated = False
+        if not same:
         
-        if not ordered_and_not_dulicated: 
+            raise ExamException('il file non è ordinato')
             
-            raise ExamException('il file presenta duplicati o non è ordinato')
+        resultant_list = []
+        
+        for item in my_list_b:
+            if item not in resultant_list:
+                resultant_list.append(item)
+                
+        if len(my_time_series) != len(resultant_list):
+            raise ExamException('il file presenta duplicati')
+            
 
-    
-        for item in my_time_series:
-            
-            try:
-                
-                element = item.split(',')
-            
-            except Exception as e:
-                
-                print('Questa riga non è corretta, la riga è {} infatti ho l errore {}'.format(item, e))
-                print('Salto questa riga di file.')
-                continue
-                
-            
-            element[-1] = element[-1].strip()
-            try:
-                element[-1] = int(element[-1])
-            except Exception as e:
-                print('errore in conversione di {}, con questa dicitura {}'.format(element[-1], e))
-                element[-1] = 0
-
-            my_time_series.append(element)
-                
         return (my_time_series)
 
 def value_list(series, year):
@@ -81,22 +88,49 @@ def value_list(series, year):
             
             continue
     
-    list = [item[1] for item in series if year in item[0]]
+    list_years = [item for item in series if year in item[0]]
 
-    if list == []:
+    if list_years == []:
         
         return None
+    print(list_years)
     
-    return list
+    month_list =['01','02','03','04','05','06','07','08','09','10','11','12']
+    
+    if len(list_years) < 12:
+        
+        for value in month_list:
+            
+            missing = 0
+            for i in range(len(list_years)):
+                
+                if value not in list_years[i][0]:
+                    missing += 1
+                    
+            if missing == len(list_years):
+                element = [[year, value], None]
+                list_years.append(element)
+    
+        list_years.sort()
+        print(' ')
+        print(list_years)
+                        
+    return_list = [item[1] for item in list_years]
+    
+    print(' ')
+    print(return_list)
+                
+    return return_list
     
 
 def detect_similar_monthly_variation(time_series, years):
     
     list_years_1 = value_list(time_series, years[0])
+    
 
     print('{} = {}'.format(years[0],list_years_1))
 
-    list_years_2 = value_list(time_series, years[-1])
+    list_years_2 = value_list(time_series, years[1])
 
     if list_years_1 == None or list_years_2 == None:
         
@@ -105,22 +139,36 @@ def detect_similar_monthly_variation(time_series, years):
 
     print('{} = "{}"'.format(years[1],list_years_2))
 
-    try:
-        new_1 = [abs(list_years_1[i] - list_years_1[i+1]) for i in range(len(list_years_1)-1)]
     
-    except Exception as e:
-        
-        print('ho quest errore "{}"'.format(e))
+    new_1 = []
+    for i in range(len(list_years_1)-1):
+        if list_years_1[i] != None and list_years_1[i+1] != None:
+            e = abs(list_years_1[i] - list_years_1[i+1])
+            new_1.append(e)
+        else:
+            new_1.append(None)
 
-    print('new_1 è : {}'.format(new_1))
+    print(new_1)
+    
 
-    new_2 = [abs(list_years_2[i] - list_years_2[i+1]) for i in range(len(list_years_2)-1)]
-
-    print('new_2 è : {}'.format(new_2))
+    new_2 = []
+    for i in range(len(list_years_2)-1):
+        if list_years_2[i] != None and list_years_2[i+1] != None:
+            e = abs(list_years_2[i] - list_years_2[i+1])
+            new_2.append(e)
+        else:  
+            new_2.append(None)
+  
+    print(new_2)
 
     similar = [-2, -1, 0, 1, 2]
     
-    return_list = [True if new_1[i]-new_2[i] in similar else False for i in range(len(new_1))] 
+    return_list = [] 
+    for i in range(len(new_1)):
+        if new_1[i] != None and new_2[i] != None and new_1[i]-new_2[i] in similar: 
+            return_list.append(True) 
+        else: 
+            return_list.append(False) 
     
     return (return_list)
 
